@@ -1,7 +1,9 @@
-const {getType} = require('./type');
+const {determineType} = require('./helpers');
 
-function buildDescription(schema, sever) {
-    const description = createValueDescription(schema, sever);
+const storage = require('./storage');
+
+function buildDescription(schema) {
+    const description = describeValue(schema);
     const topLevelTypes = new Set(['object', 'array']);
     if (!topLevelTypes.has(description.type)) {
         throw new Error('On top level schema must be an object or an array.');
@@ -12,37 +14,69 @@ function buildDescription(schema, sever) {
     return description;
 }
 
-function describeValue(type, options, sever) {
-    if (typeof (type) !== 'string') {
-        throw new Error('The type must be a string.');
+function transformClass(source) {
+    switch (source) {
+        case Boolean:
+            return 'boolean';
+        case Number:
+            return 'number';
+        case BigInt:
+            return 'bigint';
+        case String:
+            return 'string';
+        case Array:
+            return 'array';
+        case Object:
+            return 'object';
+        case Date:
+            return 'date';
+        case Symbol:
+            return 'symbol';
+        case RegExp:
+            return 'regexp';
+        case Function:
+            return 'function';
+        default:
+            try {
+                const name = source.getName();
+                if (storage.models.has(name)) {
+                    return name;
+                }
+            } catch (e) {
+                return source;
+            }
     }
-    if (sever.reserved.has(type)) {
-        throw new Error(`Forbidden to use reserved word "${type}" as type name.`);
-    }
-    if (!(sever.types.has(type) || sever.models.has(type))) {
-        throw new Error(`Unknown model "${type}".`);
-    }
-    return new ValueDescription(type, options, sever);
 }
 
-function createValueDescription(value, sever) {
-    if (value instanceof ValueDescription) {
-        return value;
+function describeValue(source, options) {
+    if (source instanceof ValueDescription) {
+        return source;
     }
-    switch (getType(value)) {
+    source = transformClass(source);
+    const sourceType = determineType(source);
+    switch (sourceType) {
         case 'string':
-            return describeValue(value, {}, sever);
+            const type = source;
+            if (storage.names.has(type)) {
+                throw new Error(`Forbidden to use reserved word "${type}" as type name.`);
+            }
+            if (!(storage.types.has(type) || storage.models.has(type))) {
+                throw new Error(`Unknown model "${type}".`);
+            }
+            return new ValueDescription(type, options);
         case 'array':
-            return describeValue('array', {items: value[0]}, sever);
+            return new ValueDescription('array', {items: source[0]});
         case 'object':
-            return describeValue('object', {schema: value}, sever);
+            return new ValueDescription('object', {schema: source});
+        case 'function':
+            return new ValueDescription('class', {class: source});
         default:
             throw new Error('Invalid schema.');
     }
 }
 
 class ValueDescription {
-    constructor(type = "", options = {}, sever) {
+    constructor(type, options = {}) {
         this.type = type;
         this.required = (options.required !== false);
         this.matchOnce = (options.matchOnce === true);
@@ -79,15 +113,17 @@ class ValueDescription {
         switch (this.type) {
             case 'array':
                 if (options.items) {
-                    this.items = createValueDescription(options.items, sever);
+                    this.items = describeValue(options.items);
                 } else {
                     this.items = null;
                 }
                 break;
             case 'object':
-                if (options.schema) {
-                    const patternKeyRegExp = /^\/\^.*\$\/$/;
-                    for (let key in options.schema) {
+                const schema = options.schema;
+                if (schema) {
+                    this.schema = {};
+                    for (let key in schema) {
+                        const patternKeyRegExp = new RegExp(/^\/\^.*\$\/$/);
                         if (patternKeyRegExp.test(key)) {
                             try {
                                 new RegExp(key.slice(1, -1));
@@ -95,14 +131,19 @@ class ValueDescription {
                                 throw new Error(`RegExpKey "${key}" is invalid.`);
                             }
                         }
-                        options.schema[key] = createValueDescription(options.schema[key], sever);
+                        this.schema[key] = describeValue(schema[key]);
                     }
-                    this.schema = options.schema;
                 } else {
                     this.schema = null;
                 }
+                Object.freeze(this.schema);
+                break;
+            case 'class':
+                this.class = (options.class || (class {}));
+                Object.freeze(this.class);
         }
+        Object.freeze(this);
     }
 }
 
-module.exports = {buildDescription, describeValue};
+module.exports = {buildDescription, describeValue, ValueDescription};

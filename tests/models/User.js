@@ -4,7 +4,7 @@ const name = 'User';
 
 const schema = {
     name: 'string',
-    age: 'number',
+    age: Number,
     children: [{
         name: 'string',
         age: Sever.value('number', {validator: n => ((n > 0) && (n < 99))})

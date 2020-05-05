@@ -3,13 +3,13 @@ const Sever = require('../../main');
 const name = 'Child';
 
 const schema = {
-    requiredKeyWithDefaultValue: Sever.value('string', {default: "Hello, world!"}),
-    firstborn: 'boolean',
+    requiredKeyWithDefaultValue: Sever.value(String, {default: 'Hello, world!'}),
+    firstborn: Boolean,
     wildArray: ['any'],
     parents: [
         Sever.value('User', {allowNull: true})
     ],
-    '/^RegExp.+$/': 'string'
+    '/^RegExp.+$/': String
 };
 
 const model = Sever.model(name, schema);

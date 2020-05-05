@@ -1,29 +1,23 @@
-const {describeValue, buildDescription} = require('./description');
+const {instanceToObject, instanceToJSON} = require('./converter');
+const {describeValue, buildDescription, ValueDescription} = require('./description');
 const {buildCheck, buildCreate} = require('./instance');
 
-// Sever storage
-const sever = {
-    types: new Set(['any', 'object', 'array', 'string', 'number', 'boolean']),
-    reserved: new Set(['null', 'undefined', 'unknown', 'integer', 'real', 'length', 'name', 'arguments', 'caller', 'prototype']),
-    models: new Map()
-};
+const storage = require('./storage');
 
-function value(type = "", options = {}) {
-    return describeValue(type, options, sever);
+function value(type = '', options = {}) {
+    return describeValue(type, options);
 }
 
-function model(name = "", schema = {}) {
-    const namePattern = /^(?:[a-zA-Z0-9]|[a-zA-Z0-9][\w-.]*[a-zA-Z0-9])$/;
-
-    if (!namePattern.test(name) || sever.types.has(name) || sever.reserved.has(name)) {
+function model(name = '', schema = {}) {
+    if (storage.types.has(name) || storage.names.has(name)) {
         throw new Error(`Model name "${name}" is invalid.`);
     }
-    if (sever.models.has(name)) {
+    if (storage.models.has(name)) {
         throw new Error(`Model "${name}" is already exist.`);
     }
 
-    const description = buildDescription(schema, sever);
-    const check = buildCheck(description, sever.models);
+    const description = buildDescription(schema);
+    const check = buildCheck(description);
     const create = buildCreate(check);
 
     class Model {
@@ -35,16 +29,53 @@ function model(name = "", schema = {}) {
             return new Model(object);
         }
         static check(object = {}) {
+            if (object instanceof Model) {
+                return true;
+            }
             return check(object);
+        }
+        static getName() {
+            return name;
+        }
+        static getDescription() {
+            return description;
+        }
+        static toObject(instance = {}) {
+            if (instance instanceof Model) {
+                return instanceToObject(instance, description);
+            }
+            throw new Error(`Object is not an instance of the model "${name}".`);
+        }
+        static toJSON(instance = {}, options = {}) {
+            if (instance instanceof Model) {
+                return instanceToJSON(instance, description, options);
+            }
+            throw new Error(`Object is not an instance of the model "${name}".`);
         }
     }
 
     Object.defineProperty(Model.prototype.constructor, 'name', {value: name});
     Object.defineProperty(model, name, {value: Model});
 
-    sever.models.set(name, Model);
+    storage.models.set(name, Model);
 
     return Model;
 }
 
-module.exports = {value, model};
+function toObject(instance = {}) {
+    const Model = [...storage.models.values()].find(Model => (instance instanceof Model));
+    if (Model) {
+        return instanceToObject(instance, Model.getDescription());
+    }
+    throw new Error('Object is not an instance of any model.');
+}
+
+function toJSON(instance = {}, options = {}) {
+    const Model = [...storage.models.values()].find(Model => (instance instanceof Model));
+    if (Model) {
+        return instanceToJSON(instance, Model.getDescription(), options);
+    }
+    throw new Error('Object is not an instance of any model.');
+}
+
+module.exports = {ValueDescription, value, model, toObject, toJSON};

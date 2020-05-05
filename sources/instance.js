@@ -1,77 +1,97 @@
-const {getType} = require('./type');
+const {determineType} = require('./helpers');
 
-function buildCheck(description, models) {
-    const checkValue = (value, description) => {
-        const type = getType(value);
-        if (type === description.type) {
-            if ((type === 'array') && description.items) {
-                if (!value.every(item => checkValue(item, description.items))) {
-                    return false;
-                }
+const storage = require('./storage');
+
+function checkValue(value, description, options = {validationRequired: true}) {
+    const validationResult = () => {
+        if (options.validationRequired) {
+            return description.isValid(value);
+        }
+        return true;
+    };
+    const valueType = determineType(value);
+    if (valueType === description.type) {
+        const items = description.items;
+        if ((valueType === 'array') && items) {
+            if (!value.every(item => checkValue(item, items, options))) {
+                return false;
             }
-            if ((type === 'object') && description.schema) {
-                const objectKeys = new Set(Object.keys(value));
-                const patternKeyRegExp = /^\/\^.*\$\/$/;
-                for (let key in description.schema) {
-                    if (patternKeyRegExp.test(key)) {
+        }
+        const schema = description.schema;
+        if ((valueType === 'object') && schema) {
+            const objectKeys = new Set(Object.keys(value));
+            for (const key in schema) {
+                const keyDescription = schema[key];
+                const patternKeyRegExp = new RegExp(/^\/\^.*\$\/$/);
+                if (patternKeyRegExp.test(key)) {
+                    const matchedKeys = new Set();
+                    for (const objectKey of objectKeys) {
                         const keyRegExp = new RegExp(key.slice(1, -1));
-                        const matchedKeys = new Set();
-                        for (const objectKey of objectKeys) {
-                            if (keyRegExp.test(objectKey)) {
-                                matchedKeys.add(objectKey);
-                                if (description.matchOnce) {
-                                    break;
-                                }
+                        if (keyRegExp.test(objectKey)) {
+                            matchedKeys.add(objectKey);
+                            if (description.matchOnce) {
+                                break;
                             }
                         }
-                        if (matchedKeys.size > 0) {
-                            for (const objectKey of matchedKeys) {
-                                if (checkValue(value[objectKey], description.schema[key])) {
-                                    objectKeys.delete(objectKey);
-                                } else {
-                                    return false;
-                                }
-                            }
-                        } else {
-                            if (description.schema[key].required && description.schema[key].noDefault) {
+                    }
+                    if (matchedKeys.size > 0) {
+                        for (const objectKey of matchedKeys) {
+                            if (checkValue(value[objectKey], keyDescription, options)) {
+                                objectKeys.delete(objectKey);
+                            } else {
                                 return false;
                             }
                         }
                     } else {
-                        if (objectKeys.has(key)) {
-                            if (!checkValue(value[key], description.schema[key])) {
-                                return false;
-                            }
-                        } else {
-                            if (description.schema[key].required && description.schema[key].noDefault) {
-                                return false;
-                            }
+                        if (keyDescription.required && keyDescription.noDefault) {
+                            return false;
                         }
-                        objectKeys.delete(key);
                     }
-                }
-                if (objectKeys.size > 0) {
-                    return false;
-                }
-            }
-            return description.isValid(value);
-        } else {
-            if (description.type === 'any') {
-                return description.isValid(value);
-            }
-            if (type === 'null') {
-                return description.allowNull;
-            }
-            if (models.has(description.type)) {
-                const model = models.get(description.type);
-                if ((value instanceof model) || model.check(value)) {
-                    return description.isValid(value);
+                } else {
+                    if (objectKeys.has(key)) {
+                        if (!checkValue(value[key], keyDescription, options)) {
+                            return false;
+                        }
+                    } else {
+                        if (keyDescription.required && keyDescription.noDefault) {
+                            return false;
+                        }
+                    }
+                    objectKeys.delete(key);
                 }
             }
-            return false;
+            if (objectKeys.size > 0) {
+                return false;
+            }
         }
+        return validationResult();
+    } else {
+        if (description.type === 'any') {
+            return validationResult();
+        }
+        if (valueType === 'null') {
+            return description.allowNull;
+        }
+        if (description.type === 'class') {
+            if (value instanceof description.class) {
+                return validationResult();
+            }
+        }
+        if (storage.models.has(description.type)) {
+            const Model = storage.models.get(description.type);
+            if (Model.check(value)) {
+                return validationResult();
+            }
+        }
+        return false;
+    }
+}
+
+function buildCheck(description) {
+    const check = object => {
+        const checkResult = checkValue(object, description, {validationRequired: false});
+        return checkResult;
     };
-    const check = object => checkValue(object, description);
     return check;
 }
 
@@ -83,7 +103,7 @@ function buildInstance(object, check) {
 }
 
 function buildCreate(check) {
-    const create = (object = {}) => {
+    const create = object => {
         const instance = buildInstance(object, check);
         return instance;
     };
