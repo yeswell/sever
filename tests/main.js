@@ -12,9 +12,11 @@ function test() {
         children: [{
             name: 'Ellen',
             age: 1
-        }]
+        }],
+        getName() {console.log(this.name)}
     });
     console.log(user1);
+    user1.getName();
     let user2 = User.create({
         name: 'Marian',
         age: 20,
@@ -22,9 +24,11 @@ function test() {
             name: 'Ellen',
             age: 1
         }],
-        '18+': false
+        '18+': false,
+        getName() {console.log(this.name)}
     });
     console.log(user2);
+    user2.getName();
     let child = new Child({
         firstborn: false,
         wildArray: [1, 4, 6, {a: 7}, null, null, [[1]]],

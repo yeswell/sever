@@ -15,6 +15,10 @@ function buildDescription(schema) {
 }
 
 function transformClass(source) {
+    const sourceType = determineType(source);
+    if (sourceType === 'string') {
+        return source;
+    }
     switch (source) {
         case Boolean:
             return 'boolean';
@@ -37,14 +41,11 @@ function transformClass(source) {
         case Function:
             return 'function';
         default:
-            try {
-                const name = source.getName();
-                if (storage.models.has(name)) {
-                    return name;
-                }
-            } catch (e) {
-                return source;
+            const Model = [...storage.models.values()].find(Model => (Model === source));
+            if (Model) {
+                return Model.getName();
             }
+            return source;
     }
 }
 
@@ -139,7 +140,8 @@ class ValueDescription {
                 Object.freeze(this.schema);
                 break;
             case 'class':
-                this.class = (options.class || (class {}));
+                this.class = (options.class || (class {
+                }));
                 Object.freeze(this.class);
         }
         Object.freeze(this);

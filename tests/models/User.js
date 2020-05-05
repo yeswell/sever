@@ -9,8 +9,8 @@ const schema = {
         name: 'string',
         age: Sever.value('number', {validator: n => ((n > 0) && (n < 99))})
     }],
-    '18+': Sever.value('boolean', {required: false})
-
+    '18+': Sever.value('boolean', {required: false}),
+    getName: Function
 };
 
 const model = Sever.model(name, schema);
