@@ -88,14 +88,15 @@ function describeValue(source, options) {
 
     switch (sourceType) {
         case 'string':
-            type = source;
-            if (storage.models.has(type)) {
+            if (storage.models.has(source)) {
                 type = 'model';
-                Object.assign(options, {model: storage.models.get(type)});
-            } else if (storage.names.has(type)) {
-                throw new Error(`Forbidden to use reserved word "${type}" as type name.`);
-            } else if (!storage.types.has(type)) {
-                throw new Error(`Unknown model "${type}".`);
+                Object.assign(options, {model: storage.models.get(source)});
+            } else if (storage.names.has(source)) {
+                throw new Error(`Forbidden to use reserved word "${source}" as type name.`);
+            } else if (storage.types.has(source)) {
+                type = source;
+            } else {
+                throw new Error(`Unknown model "${source}".`);
             }
             break;
         case 'array':
