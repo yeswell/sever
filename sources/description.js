@@ -1,16 +1,18 @@
-const {determineType} = require('./helpers');
+const {determineType, FreezingMap, FreezingSet} = require('./helpers');
 
 const storage = require('./storage');
 
 function buildDescription(schema) {
     const description = describeValue(schema);
     const topLevelTypes = new Set(['object', 'array']);
+
     if (!topLevelTypes.has(description.type)) {
         throw new Error('On top level schema must be an object or an array.');
     }
     if (description.allowNull) {
         throw new Error('On top level object or array cannot be a null.');
     }
+
     return description;
 }
 
@@ -49,44 +51,130 @@ function transformClass(source) {
     }
 }
 
+function transformObject(object) {
+    const map = new Map();
+    for (const key in object) {
+        if (object.hasOwnProperty(key)) {
+            map.set(key, object[key]);
+        }
+    }
+    return map;
+}
+
 function describeValue(source, options) {
     if (source instanceof ValueDescription) {
         return source;
     }
+
     source = transformClass(source);
     const sourceType = determineType(source);
+
+    let type = '';
+    options = (determineType(options) === 'object') ? {...options} : {};
+
     switch (sourceType) {
         case 'string':
-            const type = source;
-            if (storage.names.has(type)) {
-                throw new Error(`Forbidden to use reserved word "${type}" as type name.`);
-            }
-            if (!(storage.types.has(type) || storage.models.has(type))) {
-                throw new Error(`Unknown model "${type}".`);
-            }
-            return new ValueDescription(type, options);
+            type = source;
+            break;
         case 'array':
-            return new ValueDescription('array', {items: source[0]});
+            type = 'array';
+            Object.assign(options, {items: source[0]});
+            break;
         case 'object':
-            return new ValueDescription('object', {schema: source});
+            type = 'object';
+            Object.assign(options, {schema: source});
+            break;
         case 'function':
-            return new ValueDescription('class', {class: source});
+            type = 'class';
+            Object.assign(options, {class: source});
+            break;
         default:
             throw new Error('Invalid schema.');
     }
+
+    if (storage.names.has(type)) {
+        throw new Error(`Forbidden to use reserved word "${type}" as type name.`);
+    }
+    if (!(storage.types.has(type) || storage.models.has(type))) {
+        throw new Error(`Unknown model "${type}".`);
+    }
+
+    if (options.validator) {
+        if (options.validator instanceof RegExp) {
+            const typesValidatedByRegExp = new Set(['string', 'number']);
+            if (!typesValidatedByRegExp.has(type)) {
+                throw new Error('RegExp-validator can only be used with types "string" and "number".');
+            }
+        } else if (!(options.validator instanceof Function)) {
+            throw new Error('Validator must be instance of Function or RegExp.');
+        }
+    }
+
+    switch (type) {
+        case 'array':
+            if (options.items) {
+                options.items = describeValue(options.items);
+            } else {
+                options.items = null;
+            }
+            break;
+        case 'object':
+            if (options.schema) {
+                const map = (options.schema instanceof Map) ? options.schema : transformObject(options.schema);
+
+                const allKeysAreStrings = [...map.keys()].every(key => (determineType(key) === 'string'));
+                if (!allKeysAreStrings) {
+                    throw new Error('All keys in Map-schema must be a string.');
+                }
+
+                const schema = new FreezingMap();
+                for (const [key, value] of map.entries()) {
+                    const patternKeyRegExp = new RegExp(/^\/\^.*\$\/$/);
+                    if (patternKeyRegExp.test(key)) {
+                        try {
+                            new RegExp(key.slice(1, -1));
+                        } catch (e) {
+                            throw new Error(`RegExpKey "${key}" is invalid.`);
+                        }
+                    }
+                    schema.set(key, describeValue(value));
+                }
+                schema.freeze();
+                options.schema = schema;
+            } else {
+                options.schema = null;
+            }
+            break;
+    }
+
+    return new ValueDescription(type, options);
 }
 
 class ValueDescription {
-    constructor(type, options = {}) {
+    constructor(type, options) {
         this.type = type;
         this.required = (options.required !== false);
         this.matchOnce = (options.matchOnce === true);
         this.allowNull = (options.allowNull === true);
         this.noDefault = (options.default === undefined);
 
+        let validator = () => true;
+        if (options.validator instanceof RegExp) {
+            validator = value => options.validator.test(value);
+        } else if (options.validator instanceof Function) {
+            validator = value => options.validator(value);
+        }
+
+        this.isValid = value => {
+            try {
+                return (validator(value) === true);
+            } catch (e) {
+                return false;
+            }
+        };
+
         if (!this.noDefault) {
             let generateDefault = () => options.default;
-
             if (options.default instanceof Function) {
                 generateDefault = () => options.default()
             }
@@ -100,60 +188,19 @@ class ValueDescription {
             }
         }
 
-        let validator = () => true;
-
-        if (options.validator instanceof RegExp) {
-            const typesValidatedByRegExp = new Set(['string', 'number']);
-            if (typesValidatedByRegExp.has(this.type)) {
-                validator = value => options.validator.test(value);
-            } else {
-                throw new Error('RegExp-validator can only be used with types "string" and "number".');
-            }
-        } else if (options.validator instanceof Function) {
-            validator = value => (options.validator(value) === true);
-        }
-
-        this.isValid = value => {
-            try {
-                return validator(value);
-            } catch (e) {
-                return false;
-            }
-        };
-
         switch (this.type) {
             case 'array':
-                if (options.items) {
-                    this.items = describeValue(options.items);
-                } else {
-                    this.items = null;
-                }
+                this.items = options.items;
                 break;
             case 'object':
-                const schema = options.schema;
-                if (schema) {
-                    this.schema = {};
-                    for (let key in schema) {
-                        const patternKeyRegExp = new RegExp(/^\/\^.*\$\/$/);
-                        if (patternKeyRegExp.test(key)) {
-                            try {
-                                new RegExp(key.slice(1, -1));
-                            } catch (e) {
-                                throw new Error(`RegExpKey "${key}" is invalid.`);
-                            }
-                        }
-                        this.schema[key] = describeValue(schema[key]);
-                    }
-                } else {
-                    this.schema = null;
-                }
-                Object.freeze(this.schema);
+                this.schema = options.schema;
                 break;
             case 'class':
                 this.class = options.class;
                 Object.freeze(this.class);
                 break;
         }
+
         Object.freeze(this);
     }
 }

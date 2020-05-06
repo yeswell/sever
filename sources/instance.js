@@ -20,8 +20,8 @@ function checkValue(value, description, options = {validationRequired: true}) {
         const schema = description.schema;
         if ((valueType === 'object') && schema) {
             const objectKeys = new Set(Object.keys(value));
-            for (const key in schema) {
-                const keyDescription = schema[key];
+            for (const key of schema.keys()) {
+                const keyDescription = schema.get(key);
                 const patternKeyRegExp = new RegExp(/^\/\^.*\$\/$/);
                 if (patternKeyRegExp.test(key)) {
                     const matchedKeys = new Set();
@@ -111,15 +111,15 @@ function buildCreate(check) {
 }
 
 function getKeyDescription(key, schema) {
-    const patternKeyRegExp = /^\/\^.*\$\/$/;
-    for (const schemaKey in schema) {
+    for (const schemaKey of schema.keys()) {
+        const patternKeyRegExp = new RegExp(/^\/\^.*\$\/$/);
         if (patternKeyRegExp.test(schemaKey)) {
             const keyRegExp = new RegExp(schemaKey.slice(1, -1));
             if (keyRegExp.test(key)) {
-                return schema[schemaKey];
+                return schema.get(schemaKey);
             }
         } else if (key === schemaKey) {
-            return schema[schemaKey];
+            return schema.get(schemaKey);
         }
     }
 }
