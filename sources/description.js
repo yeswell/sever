@@ -4,8 +4,8 @@ const storage = require('./storage');
 
 function buildDescription(schema) {
     const description = describeValue(schema);
-    const topLevelTypes = new Set(['object', 'array']);
 
+    const topLevelTypes = new Set(['object', 'array']);
     if (!topLevelTypes.has(description.type)) {
         throw new Error('On top level schema must be an object or an array.');
     }
@@ -61,6 +61,20 @@ function transformObject(object) {
     return map;
 }
 
+function createSchema(...objects) {
+    const schema = objects.reduce((map, source) => {
+        const sourceType = determineType(source);
+        if (sourceType === 'object') {
+            const newMap = transformObject(source);
+            const mergedMap = new Map([...map, ...newMap]);
+            return mergedMap;
+        } else {
+            throw new Error('Arguments must be an objects.');
+        }
+    }, new Map());
+    return schema;
+}
+
 function describeValue(source, options) {
     if (source instanceof ValueDescription) {
         return source;
@@ -70,7 +84,8 @@ function describeValue(source, options) {
     const sourceType = determineType(source);
 
     let type = '';
-    options = (determineType(options) === 'object') ? {...options} : {};
+    const optionsType = determineType(options);
+    options = (optionsType === 'object') ? {...options} : {};
 
     switch (sourceType) {
         case 'string':
@@ -141,7 +156,8 @@ function describeValue(source, options) {
                 }
                 schema.freeze();
                 options.schema = schema;
-            } else {
+            }
+            if ((!options.schema) || (options.schema.size === 0)) {
                 options.schema = null;
             }
             break;
@@ -197,7 +213,6 @@ class ValueDescription {
                 break;
             case 'class':
                 this.class = options.class;
-                Object.freeze(this.class);
                 break;
         }
 
@@ -205,4 +220,4 @@ class ValueDescription {
     }
 }
 
-module.exports = {buildDescription, describeValue, ValueDescription};
+module.exports = {buildDescription, createSchema, describeValue, ValueDescription};
