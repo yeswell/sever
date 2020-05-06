@@ -12,6 +12,7 @@ const reserved = {
         'regexp',
         'function',
         'class',
+        'model'
     ],
     names: [
         'null',

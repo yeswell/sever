@@ -17,10 +17,6 @@ function buildDescription(schema) {
 }
 
 function transformClass(source) {
-    const sourceType = determineType(source);
-    if (sourceType === 'string') {
-        return source;
-    }
     switch (source) {
         case Boolean:
             return 'boolean';
@@ -43,10 +39,6 @@ function transformClass(source) {
         case Function:
             return 'function';
         default:
-            const Model = [...storage.models.values()].find(Model => (Model === source));
-            if (Model) {
-                return Model.getName();
-            }
             return source;
     }
 }
@@ -75,6 +67,13 @@ function createSchema(...objects) {
     return schema;
 }
 
+function findModel(source) {
+    const models = [...storage.models.values()];
+    if (models.includes(source)) {
+        return source;
+    }
+}
+
 function describeValue(source, options) {
     if (source instanceof ValueDescription) {
         return source;
@@ -90,10 +89,12 @@ function describeValue(source, options) {
     switch (sourceType) {
         case 'string':
             type = source;
-            if (storage.names.has(type)) {
+            if (storage.models.has(type)) {
+                type = 'model';
+                Object.assign(options, {model: storage.models.get(type)});
+            } else if (storage.names.has(type)) {
                 throw new Error(`Forbidden to use reserved word "${type}" as type name.`);
-            }
-            if (!(storage.types.has(type) || storage.models.has(type))) {
+            } else if (!storage.types.has(type)) {
                 throw new Error(`Unknown model "${type}".`);
             }
             break;
@@ -106,8 +107,14 @@ function describeValue(source, options) {
             Object.assign(options, {schema: source});
             break;
         case 'function':
-            type = 'class';
-            Object.assign(options, {class: source});
+            const Model = findModel(source);
+            if (Model) {
+                type = 'model';
+                Object.assign(options, {model: Model});
+            } else {
+                type = 'class';
+                Object.assign(options, {class: source});
+            }
             break;
         default:
             throw new Error('Invalid schema.');
@@ -165,6 +172,13 @@ function describeValue(source, options) {
             if (classType !== 'function') {
                 throw new Error('Property "class" in options must be instance of Function.');
             }
+            break;
+        case 'model':
+            const Model = findModel(options.model);
+            if (!Model) {
+                throw new Error('Property "model" in options must be some kind of Model.');
+            }
+            break;
     }
 
     return new ValueDescription(type, options);
@@ -218,10 +232,13 @@ class ValueDescription {
             case 'class':
                 this.class = options.class;
                 break;
+            case 'model':
+                this.model = options.model;
+                break;
         }
 
         Object.freeze(this);
     }
 }
 
-module.exports = {buildDescription, createSchema, describeValue, ValueDescription};
+module.exports = {buildDescription, createSchema, describeValue};

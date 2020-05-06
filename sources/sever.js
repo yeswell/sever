@@ -1,5 +1,6 @@
+const {determineType} = require('./helpers');
 const {instanceToObject, instanceToJSON} = require('./converter');
-const {createSchema, describeValue, buildDescription, ValueDescription} = require('./description');
+const {createSchema, describeValue, buildDescription} = require('./description');
 const {buildCheck, buildCreate} = require('./instance');
 
 const storage = require('./storage');
@@ -13,11 +14,15 @@ function value(type = '', options = {}) {
 }
 
 function model(name = '', schema = {}) {
-    if (storage.types.has(name) || storage.names.has(name)) {
-        throw new Error(`Model name "${name}" is invalid.`);
+    const nameType = determineType(name);
+    if (nameType !== 'string') {
+        throw new Error('Model name must be a string.');
     }
     if (storage.models.has(name)) {
         throw new Error(`Model "${name}" is already exist.`);
+    }
+    if (storage.names.has(name) || storage.types.has(name)) {
+        throw new Error(`Model name "${name}" is invalid.`);
     }
 
     const description = buildDescription(schema);
@@ -59,15 +64,22 @@ function model(name = '', schema = {}) {
     }
 
     Object.defineProperty(Model.prototype.constructor, 'name', {value: name});
-    Object.defineProperty(model, name, {value: Model});
+    Object.freeze(Model);
 
+    Object.defineProperty(model, name, {value: Model});
     storage.models.set(name, Model);
 
     return Model;
 }
 
+function findModelOfInstance(instance) {
+    const models = [...storage.models.values()];
+    const Model = models.find(Model => (instance instanceof Model));
+    return Model;
+}
+
 function toObject(instance = {}) {
-    const Model = [...storage.models.values()].find(Model => (instance instanceof Model));
+    const Model = findModelOfInstance(instance);
     if (Model) {
         return instanceToObject(instance, Model.getDescription());
     }
@@ -75,11 +87,11 @@ function toObject(instance = {}) {
 }
 
 function toJSON(instance = {}, options = {}) {
-    const Model = [...storage.models.values()].find(Model => (instance instanceof Model));
+    const Model = findModelOfInstance(instance);
     if (Model) {
         return instanceToJSON(instance, Model.getDescription(), options);
     }
     throw new Error('Object is not an instance of any model.');
 }
 
-module.exports = {ValueDescription, schema, value, model, toObject, toJSON};
+module.exports = {schema, value, model, toObject, toJSON};

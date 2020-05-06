@@ -72,16 +72,11 @@ function checkValue(value, description, options = {validationRequired: true}) {
         if (valueType === 'null') {
             return description.allowNull;
         }
-        if (description.type === 'class') {
-            if (value instanceof description.class) {
-                return validationResult();
-            }
+        if ((description.type === 'class') && (value instanceof description.class)) {
+            return validationResult();
         }
-        if (storage.models.has(description.type)) {
-            const Model = storage.models.get(description.type);
-            if (Model.check(value)) {
-                return validationResult();
-            }
+        if ((description.type === 'model') && description.model.check(value)) {
+            return validationResult();
         }
         return false;
     }
