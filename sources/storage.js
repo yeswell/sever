@@ -10,12 +10,12 @@ const reserved = {
         'date',
         'symbol',
         'regexp',
-        'function'
+        'function',
+        'class',
     ],
     names: [
         'null',
         'undefined',
-        'class',
         'create',
         'check',
         'getName',

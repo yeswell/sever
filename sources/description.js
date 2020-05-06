@@ -90,6 +90,12 @@ function describeValue(source, options) {
     switch (sourceType) {
         case 'string':
             type = source;
+            if (storage.names.has(type)) {
+                throw new Error(`Forbidden to use reserved word "${type}" as type name.`);
+            }
+            if (!(storage.types.has(type) || storage.models.has(type))) {
+                throw new Error(`Unknown model "${type}".`);
+            }
             break;
         case 'array':
             type = 'array';
@@ -105,13 +111,6 @@ function describeValue(source, options) {
             break;
         default:
             throw new Error('Invalid schema.');
-    }
-
-    if (storage.names.has(type)) {
-        throw new Error(`Forbidden to use reserved word "${type}" as type name.`);
-    }
-    if (!(storage.types.has(type) || storage.models.has(type))) {
-        throw new Error(`Unknown model "${type}".`);
     }
 
     if (options.validator) {
@@ -161,6 +160,11 @@ function describeValue(source, options) {
                 options.schema = null;
             }
             break;
+        case 'class':
+            const classType = determineType(options.class);
+            if (classType !== 'function') {
+                throw new Error('Property "class" in options must be instance of Function.');
+            }
     }
 
     return new ValueDescription(type, options);
