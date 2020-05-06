@@ -84,10 +84,20 @@ class ValueDescription {
         this.allowNull = (options.allowNull === true);
         this.noDefault = (options.default === undefined);
 
-        if (options.default instanceof Function) {
-            this.getDefault = () => options.default();
-        } else {
-            this.getDefault = () => options.default;
+        if (!this.noDefault) {
+            let generateDefault = () => options.default;
+
+            if (options.default instanceof Function) {
+                generateDefault = () => options.default()
+            }
+
+            this.getDefault = () => {
+                try {
+                    return generateDefault();
+                } catch (e) {
+                    return undefined;
+                }
+            }
         }
 
         let validator = () => true;
