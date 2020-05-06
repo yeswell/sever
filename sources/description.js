@@ -150,9 +150,9 @@ class ValueDescription {
                 Object.freeze(this.schema);
                 break;
             case 'class':
-                this.class = (options.class || (class {
-                }));
+                this.class = options.class;
                 Object.freeze(this.class);
+                break;
         }
         Object.freeze(this);
     }
