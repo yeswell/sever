@@ -22,4 +22,32 @@ function determineType(value) {
     return 'object';
 }
 
-module.exports = {determineType};
+class FreezingMap extends Map {
+    constructor(...args) {
+        super(...args);
+        this.isFrozen = () => false;
+    }
+    freeze() {
+        this.clear = () => {};
+        this.delete = () => false;
+        this.set = () => this;
+        this.isFrozen = () => true;
+        Object.freeze(this);
+    }
+}
+
+class FreezingSet extends Set {
+    constructor(...args) {
+        super(...args);
+        this.isFrozen = () => false;
+    }
+    freeze() {
+        this.clear = () => {};
+        this.delete = () => false;
+        this.add = () => this;
+        this.isFrozen = () => true;
+        Object.freeze(this);
+    }
+}
+
+module.exports = {determineType, FreezingMap, FreezingSet};
