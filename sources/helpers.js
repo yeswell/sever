@@ -25,13 +25,11 @@ function determineType(value) {
 class FreezingMap extends Map {
     constructor(...args) {
         super(...args);
-        this.isFrozen = () => false;
     }
     freeze() {
         this.clear = () => {};
         this.delete = () => false;
         this.set = () => this;
-        this.isFrozen = () => true;
         Object.freeze(this);
     }
 }
@@ -39,13 +37,11 @@ class FreezingMap extends Map {
 class FreezingSet extends Set {
     constructor(...args) {
         super(...args);
-        this.isFrozen = () => false;
     }
     freeze() {
         this.clear = () => {};
         this.delete = () => false;
         this.add = () => this;
-        this.isFrozen = () => true;
         Object.freeze(this);
     }
 }
