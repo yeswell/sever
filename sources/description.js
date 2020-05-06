@@ -90,23 +90,23 @@ class ValueDescription {
             this.getDefault = () => options.default;
         }
 
+        let validator = () => true;
+
         if (options.validator instanceof RegExp) {
-            if ((this.type === 'string') || (this.type === 'number')) {
-                this.validator = value => options.validator.test(value);
+            const typesValidatedByRegExp = new Set(['string', 'number']);
+            if (typesValidatedByRegExp.has(this.type)) {
+                validator = value => options.validator.test(value);
             } else {
                 throw new Error('RegExp-validator can only be used with types "string" and "number".');
             }
         } else if (options.validator instanceof Function) {
-            this.validator = value => (options.validator(value) === true);
-        } else {
-            this.validator = () => true;
+            validator = value => (options.validator(value) === true);
         }
 
         this.isValid = value => {
             try {
-                return this.validator(value);
+                return validator(value);
             } catch (e) {
-                console.log(e);
                 return false;
             }
         };
