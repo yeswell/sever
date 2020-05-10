@@ -67,6 +67,11 @@ function createSchema(...objects) {
     return schema;
 }
 
+function createMix(...types) {
+    const set = new Set(types);
+    return set;
+}
+
 function findModel(source) {
     const models = [...storage.models.values()];
     if (models.includes(source)) {
@@ -104,8 +109,13 @@ function describeValue(source, options) {
             Object.assign(options, {items: source[0]});
             break;
         case 'object':
-            type = 'object';
-            Object.assign(options, {schema: source});
+            if (source instanceof Set) {
+                type = 'mix';
+                Object.assign(options, {choices: source});
+            } else {
+                type = 'object';
+                Object.assign(options, {schema: source});
+            }
             break;
         case 'function':
             const Model = findModel(source);
@@ -180,6 +190,30 @@ function describeValue(source, options) {
                 throw new Error('Property "model" in options must be some kind of Model.');
             }
             break;
+        case 'mix':
+            if (options.choices instanceof Set) {
+                if (options.choices.size === 0) {
+                    throw new Error('Required at least one type in mix.');
+                }
+
+                const choices = new FreezingSet();
+                for (const value of options.choices.values()) {
+                    const valueDescription = describeValue(value);
+                    choices.add(valueDescription);
+                }
+                choices.freeze();
+                options.choices = choices;
+            } else {
+                throw new Error('Property "choices" in options must be instance of Set.');
+            }
+            if (options.strategy) {
+                if (!storage.strategies.has(options.strategy)) {
+                    throw new Error(`Invalid strategy "${options.strategy}".`);
+                }
+            } else {
+                options.strategy = 'any';
+            }
+            break;
     }
 
     return new ValueDescription(type, options);
@@ -236,10 +270,14 @@ class ValueDescription {
             case 'model':
                 this.model = options.model;
                 break;
+            case 'mix':
+                this.choices = options.choices;
+                this.strategy = options.strategy;
+                break;
         }
 
         Object.freeze(this);
     }
 }
 
-module.exports = {buildDescription, createSchema, describeValue};
+module.exports = {buildDescription, createSchema, createMix, describeValue};

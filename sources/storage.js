@@ -1,6 +1,11 @@
 const reserved = {
-    types: [
+    strategies: [
         'any',
+        'all',
+        'one',
+        'not'
+    ],
+    types: [
         'boolean',
         'number',
         'bigint',
@@ -12,7 +17,9 @@ const reserved = {
         'regexp',
         'function',
         'class',
-        'model'
+        'model',
+        'any',
+        'mix'
     ],
     names: [
         'null',
@@ -32,6 +39,7 @@ const reserved = {
 };
 
 const storage = {
+    strategies: new Set(reserved.strategies),
     types: new Set(reserved.types),
     names: new Set(reserved.names),
     models: new Map()

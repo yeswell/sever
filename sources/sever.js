@@ -1,12 +1,16 @@
 const {determineType} = require('./helpers');
 const {instanceToObject, instanceToJSON} = require('./converter');
-const {createSchema, describeValue, buildDescription} = require('./description');
+const {createSchema, createMix, describeValue, buildDescription} = require('./description');
 const {buildCheck, buildCreate} = require('./instance');
 
 const storage = require('./storage');
 
 function schema(...objects) {
     return createSchema(...objects);
+}
+
+function mix(...types) {
+    return createMix(...types);
 }
 
 function value(type = '', options = {}) {
@@ -94,4 +98,4 @@ function toJSON(instance = {}, options = {}) {
     throw new Error('Object is not an instance of any model.');
 }
 
-module.exports = {schema, value, model, toObject, toJSON};
+module.exports = {schema, mix, value, model, toObject, toJSON};
