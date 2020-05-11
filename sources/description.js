@@ -154,20 +154,24 @@ function describeValue(source, options) {
         case 'object':
             const map = transformObject(options.schema);
             if (map.size > 0) {
-                const allKeysAreStrings = [...map.keys()].every(key => (determineType(key) === 'string'));
-                if (!allKeysAreStrings) {
-                    throw new Error('All keys in Map-schema must be a string.');
-                }
-
+                const allowedKeyTypes = new Set(['string', 'regexp']);
                 const schema = new FreezingMap();
-                for (const [key, value] of map.entries()) {
-                    const patternKeyRegExp = new RegExp(/^\/\^.*\$\/$/);
-                    if (patternKeyRegExp.test(key)) {
-                        try {
-                            new RegExp(key.slice(1, -1));
-                        } catch (e) {
-                            throw new Error(`RegExpKey "${key}" is invalid.`);
+                for (let [key, value] of map.entries()) {
+                    const keyType = determineType(key);
+                    if (!allowedKeyTypes.has(keyType)) {
+                        throw new Error('All keys in Map-schema must be a string or a regexp.');
+                    }
+                    const patternRegExpKey = new RegExp(/^\/\^.*\$\/$/);
+                    if (keyType === 'string') {
+                        if (patternRegExpKey.test(key)) {
+                            try {
+                                key = new RegExp(key.slice(1, -1));
+                            } catch (e) {
+                                throw new Error(`RegExpKey "${key}" is invalid.`);
+                            }
                         }
+                    } else if (!patternRegExpKey.test(String(key))) {
+                        throw new Error(`RegExpKey "${key}" is invalid.`);
                     }
                     schema.set(key, describeValue(value));
                 }
@@ -193,7 +197,6 @@ function describeValue(source, options) {
                 if (options.choices.size === 0) {
                     throw new Error('Required at least one type in mix.');
                 }
-
                 const choices = new FreezingSet();
                 for (const value of options.choices.values()) {
                     const valueDescription = describeValue(value);

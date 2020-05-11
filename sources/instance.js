@@ -54,45 +54,32 @@ function checkValue(value, description, options = {validationRequired: true}) {
         }
         const schema = description.schema;
         if ((valueType === 'object') && schema) {
-            const objectKeys = new Set(Object.keys(value));
+            const object = value;
+            const objectKeys = new Set(Object.keys(object));
             for (const schemaKey of schema.keys()) {
                 const keyDescription = schema.get(schemaKey);
-                const patternKeyRegExp = new RegExp(/^\/\^.*\$\/$/);
-                if (patternKeyRegExp.test(schemaKey)) {
-                    const matchedKeys = new Set();
+                const matchedKeys = new Set();
+                if (schemaKey instanceof RegExp) {
                     for (const objectKey of objectKeys) {
-                        const keyRegExp = new RegExp(schemaKey.slice(1, -1));
-                        if (keyRegExp.test(objectKey)) {
+                        if (schemaKey.test(objectKey)) {
                             matchedKeys.add(objectKey);
                             if (description.matchOnce) {
                                 break;
                             }
                         }
                     }
-                    if (matchedKeys.size > 0) {
-                        for (const objectKey of matchedKeys) {
-                            if (checkValue(value[objectKey], keyDescription, options)) {
-                                objectKeys.delete(objectKey);
-                            } else {
-                                return false;
-                            }
-                        }
-                    } else {
-                        if (keyDescription.required && !keyDescription.hasDefault) {
+                } else if (objectKeys.has(schemaKey)) {
+                    matchedKeys.add(schemaKey);
+                }
+                if (matchedKeys.size > 0) {
+                    for (const matchedKey of matchedKeys) {
+                        if (!checkValue(object[matchedKey], keyDescription, options)) {
                             return false;
                         }
+                        objectKeys.delete(matchedKey);
                     }
-                } else {
-                    if (objectKeys.has(schemaKey)) {
-                        if (!checkValue(value[schemaKey], keyDescription, options)) {
-                            return false;
-                        }
-                    } else {
-                        if (keyDescription.required && !keyDescription.hasDefault) {
-                            return false;
-                        }
-                    }
-                    objectKeys.delete(schemaKey);
+                } else if (keyDescription.required && !keyDescription.hasDefault) {
+                    return false;
                 }
             }
             if (objectKeys.size > 0) {
@@ -149,13 +136,7 @@ function buildCreate(check) {
 
 function getKeyDescription(key, schema) {
     for (const schemaKey of schema.keys()) {
-        const patternKeyRegExp = new RegExp(/^\/\^.*\$\/$/);
-        if (patternKeyRegExp.test(schemaKey)) {
-            const keyRegExp = new RegExp(schemaKey.slice(1, -1));
-            if (keyRegExp.test(key)) {
-                return schema.get(schemaKey);
-            }
-        } else if (key === schemaKey) {
+        if ((schemaKey === key) || ((schemaKey instanceof RegExp) && schemaKey.test(key))) {
             return schema.get(schemaKey);
         }
     }
