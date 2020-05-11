@@ -8,8 +8,7 @@ function buildDescription(schema) {
     const topLevelTypes = new Set(['object', 'array']);
     if (!topLevelTypes.has(description.type)) {
         throw new Error('On top level schema must be an object or an array.');
-    }
-    if (description.allowNull) {
+    } else if (description.allowNull) {
         throw new Error('On top level object or array cannot be a null.');
     }
 
@@ -239,9 +238,7 @@ class ValueDescription {
                     }
                 }
             } else {
-                this.getDefault = () => {
-                    return options.default;
-                }
+                this.getDefault = () => options.default;
             }
         }
 
@@ -256,9 +253,7 @@ class ValueDescription {
                     }
                 };
             } else {
-                this.isValid = value => {
-                    return options.validator.test(value);
-                }
+                this.isValid = value => options.validator.test(value);
             }
         }
 

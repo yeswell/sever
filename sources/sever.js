@@ -21,11 +21,9 @@ function model(name = '', schema = {}) {
     const nameType = determineType(name);
     if (nameType !== 'string') {
         throw new Error('Model name must be a string.');
-    }
-    if (storage.models.has(name)) {
+    } else if (storage.models.has(name)) {
         throw new Error(`Model "${name}" is already exist.`);
-    }
-    if (storage.types.has(name) || storage.names.has(name)) {
+    } else if (storage.types.has(name) || storage.names.has(name)) {
         throw new Error(`Model name "${name}" is invalid.`);
     }
 
