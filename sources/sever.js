@@ -6,11 +6,11 @@ const {buildCheck, buildCreate} = require('./instance');
 const storage = require('./storage');
 
 function schema(...objects) {
-    return createSchema(...objects);
+    return createSchema(objects);
 }
 
 function mix(...types) {
-    return createMix(...types);
+    return createMix(types);
 }
 
 function value(type = '', options = {}) {
@@ -25,7 +25,7 @@ function model(name = '', schema = {}) {
     if (storage.models.has(name)) {
         throw new Error(`Model "${name}" is already exist.`);
     }
-    if (storage.names.has(name) || storage.types.has(name)) {
+    if (storage.types.has(name) || storage.names.has(name)) {
         throw new Error(`Model name "${name}" is invalid.`);
     }
 
@@ -70,16 +70,18 @@ function model(name = '', schema = {}) {
     Object.defineProperty(Model.prototype.constructor, 'name', {value: name});
     Object.freeze(Model);
 
-    Object.defineProperty(model, name, {value: Model});
+    model[name] = Model;
     storage.models.set(name, Model);
 
     return Model;
 }
 
 function findModelOfInstance(instance) {
-    const models = [...storage.models.values()];
-    const Model = models.find(Model => (instance instanceof Model));
-    return Model;
+    for (const Model of storage.models.values()) {
+        if (instance instanceof Model) {
+            return Model;
+        }
+    }
 }
 
 function toObject(instance = {}) {

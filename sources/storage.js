@@ -1,9 +1,25 @@
+const strategies = [
+    'any',
+    'all',
+    'one',
+    'not'
+];
+
 const reserved = {
-    strategies: [
-        'any',
-        'all',
-        'one',
-        'not'
+    names: [
+        'null',
+        'undefined',
+        'create',
+        'check',
+        'getName',
+        'getDescription',
+        'toObject',
+        'toJSON',
+        'length',
+        'name',
+        'arguments',
+        'caller',
+        'prototype'
     ],
     types: [
         'boolean',
@@ -21,27 +37,12 @@ const reserved = {
         'any',
         'mix'
     ],
-    names: [
-        'null',
-        'undefined',
-        'create',
-        'check',
-        'getName',
-        'getDescription',
-        'toObject',
-        'toJSON',
-        'length',
-        'name',
-        'arguments',
-        'caller',
-        'prototype'
-    ]
 };
 
 const storage = {
-    strategies: new Set(reserved.strategies),
-    types: new Set(reserved.types),
+    strategies: new Set(strategies),
     names: new Set(reserved.names),
+    types: new Set(reserved.types),
     models: new Map()
 };
 

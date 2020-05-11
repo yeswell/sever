@@ -1,10 +1,8 @@
 const {determineType} = require('./helpers');
 
-const storage = require('./storage');
-
 function checkValue(value, description, options = {validationRequired: true}) {
     const validationResult = () => {
-        if (options.validationRequired) {
+        if (options.validationRequired && description.hasValidator) {
             return description.isValid(value);
         }
         return true;
@@ -57,13 +55,13 @@ function checkValue(value, description, options = {validationRequired: true}) {
         const schema = description.schema;
         if ((valueType === 'object') && schema) {
             const objectKeys = new Set(Object.keys(value));
-            for (const key of schema.keys()) {
-                const keyDescription = schema.get(key);
+            for (const schemaKey of schema.keys()) {
+                const keyDescription = schema.get(schemaKey);
                 const patternKeyRegExp = new RegExp(/^\/\^.*\$\/$/);
-                if (patternKeyRegExp.test(key)) {
+                if (patternKeyRegExp.test(schemaKey)) {
                     const matchedKeys = new Set();
                     for (const objectKey of objectKeys) {
-                        const keyRegExp = new RegExp(key.slice(1, -1));
+                        const keyRegExp = new RegExp(schemaKey.slice(1, -1));
                         if (keyRegExp.test(objectKey)) {
                             matchedKeys.add(objectKey);
                             if (description.matchOnce) {
@@ -80,21 +78,21 @@ function checkValue(value, description, options = {validationRequired: true}) {
                             }
                         }
                     } else {
-                        if (keyDescription.required && keyDescription.noDefault) {
+                        if (keyDescription.required && !keyDescription.hasDefault) {
                             return false;
                         }
                     }
                 } else {
-                    if (objectKeys.has(key)) {
-                        if (!checkValue(value[key], keyDescription, options)) {
+                    if (objectKeys.has(schemaKey)) {
+                        if (!checkValue(value[schemaKey], keyDescription, options)) {
                             return false;
                         }
                     } else {
-                        if (keyDescription.required && keyDescription.noDefault) {
+                        if (keyDescription.required && !keyDescription.hasDefault) {
                             return false;
                         }
                     }
-                    objectKeys.delete(key);
+                    objectKeys.delete(schemaKey);
                 }
             }
             if (objectKeys.size > 0) {

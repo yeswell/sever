@@ -44,6 +44,9 @@ function transformClass(source) {
 }
 
 function transformObject(object) {
+    if (object instanceof Map) {
+        return object;
+    }
     const map = new Map();
     for (const key in object) {
         if (object.hasOwnProperty(key)) {
@@ -53,30 +56,33 @@ function transformObject(object) {
     return map;
 }
 
-function createSchema(...objects) {
-    const schema = objects.reduce((map, source) => {
+function createSchema(objects) {
+    const schema = new Map();
+    for (const source of objects) {
         const sourceType = determineType(source);
-        if (sourceType === 'object') {
-            const newMap = transformObject(source);
-            const mergedMap = new Map([...map, ...newMap]);
-            return mergedMap;
-        } else {
+        if (sourceType !== 'object') {
             throw new Error('Arguments must be an objects.');
         }
-    }, new Map());
+        const map = transformObject(source);
+        for (const [key, value] of map.entries()) {
+            schema.set(key, value);
+        }
+    }
     return schema;
 }
 
-function createMix(...types) {
+function createMix(types) {
     const set = new Set(types);
     return set;
 }
 
-function findModel(source) {
-    const models = [...storage.models.values()];
-    if (models.includes(source)) {
-        return source;
+function modelExist(source) {
+    for (const Model of storage.models.values()) {
+        if (Model === source) {
+            return true;
+        }
     }
+    return false;
 }
 
 function describeValue(source, options) {
@@ -96,10 +102,10 @@ function describeValue(source, options) {
             if (storage.models.has(source)) {
                 type = 'model';
                 Object.assign(options, {model: storage.models.get(source)});
-            } else if (storage.names.has(source)) {
-                throw new Error(`Forbidden to use reserved word "${source}" as type name.`);
             } else if (storage.types.has(source)) {
                 type = source;
+            } else if (storage.names.has(source)) {
+                throw new Error(`Forbidden to use reserved word "${source}" as type name.`);
             } else {
                 throw new Error(`Unknown model "${source}".`);
             }
@@ -118,10 +124,9 @@ function describeValue(source, options) {
             }
             break;
         case 'function':
-            const Model = findModel(source);
-            if (Model) {
+            if (modelExist(source)) {
                 type = 'model';
-                Object.assign(options, {model: Model});
+                Object.assign(options, {model: source});
             } else {
                 type = 'class';
                 Object.assign(options, {class: source});
@@ -151,9 +156,8 @@ function describeValue(source, options) {
             }
             break;
         case 'object':
-            if (options.schema) {
-                const map = (options.schema instanceof Map) ? options.schema : transformObject(options.schema);
-
+            const map = transformObject(options.schema);
+            if (map.size > 0) {
                 const allKeysAreStrings = [...map.keys()].every(key => (determineType(key) === 'string'));
                 if (!allKeysAreStrings) {
                     throw new Error('All keys in Map-schema must be a string.');
@@ -173,8 +177,7 @@ function describeValue(source, options) {
                 }
                 schema.freeze();
                 options.schema = schema;
-            }
-            if ((!options.schema) || (options.schema.size === 0)) {
+            } else {
                 options.schema = null;
             }
             break;
@@ -185,8 +188,7 @@ function describeValue(source, options) {
             }
             break;
         case 'model':
-            const Model = findModel(options.model);
-            if (!Model) {
+            if (!modelExist(options.model)) {
                 throw new Error('Property "model" in options must be some kind of Model.');
             }
             break;
@@ -222,39 +224,43 @@ function describeValue(source, options) {
 class ValueDescription {
     constructor(type, options) {
         this.type = type;
+
         this.required = (options.required !== false);
         this.matchOnce = (options.matchOnce === true);
         this.allowNull = (options.allowNull === true);
-        this.noDefault = (options.default === undefined);
 
-        let validator = () => true;
-        if (options.validator instanceof RegExp) {
-            validator = value => options.validator.test(value);
-        } else if (options.validator instanceof Function) {
-            validator = value => options.validator(value);
-        }
-
-        this.isValid = value => {
-            try {
-                return (validator(value) === true);
-            } catch (e) {
-                return false;
-            }
-        };
-
-        if (!this.noDefault) {
-            let generateDefault = () => options.default;
+        this.hasDefault = (options.default !== undefined);
+        if (this.hasDefault) {
             if (options.default instanceof Function) {
-                generateDefault = () => options.default()
-            }
-
-            this.getDefault = () => {
-                try {
-                    return generateDefault();
-                } catch (e) {
-                    return undefined;
+                this.getDefault = () => {
+                    try {
+                        return options.default();
+                    } catch (e) {
+                        return undefined;
+                    }
+                }
+            } else {
+                this.getDefault = () => {
+                    return options.default;
                 }
             }
+        }
+
+        this.hasValidator = true;
+        if (options.validator instanceof RegExp) {
+            this.isValid = value => {
+                return options.validator.test(value);
+            }
+        } else if (options.validator instanceof Function) {
+            this.isValid = value => {
+                try {
+                    return (options.validator(value) === true);
+                } catch (e) {
+                    return false;
+                }
+            };
+        } else {
+            this.hasValidator = false;
         }
 
         switch (this.type) {
