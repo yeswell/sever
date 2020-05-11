@@ -59,10 +59,6 @@ function transformObject(object) {
 function createSchema(objects) {
     const schema = new Map();
     for (const source of objects) {
-        const sourceType = determineType(source);
-        if (sourceType !== 'object') {
-            throw new Error('Arguments must be an objects.');
-        }
         const map = transformObject(source);
         for (const [key, value] of map.entries()) {
             schema.set(key, value);
@@ -101,7 +97,7 @@ function describeValue(source, options) {
         case 'string':
             if (storage.models.has(source)) {
                 type = 'model';
-                Object.assign(options, {model: storage.models.get(source)});
+                options.model = storage.models.get(source);
             } else if (storage.types.has(source)) {
                 type = source;
             } else if (storage.names.has(source)) {
@@ -112,24 +108,24 @@ function describeValue(source, options) {
             break;
         case 'array':
             type = 'array';
-            Object.assign(options, {items: source[0]});
+            options.items = source[0];
             break;
         case 'object':
             if (source instanceof Set) {
                 type = 'mix';
-                Object.assign(options, {choices: source});
+                options.choices = source;
             } else {
                 type = 'object';
-                Object.assign(options, {schema: source});
+                options.schema = source;
             }
             break;
         case 'function':
             if (modelExist(source)) {
                 type = 'model';
-                Object.assign(options, {model: source});
+                options.model = source;
             } else {
                 type = 'class';
-                Object.assign(options, {class: source});
+                options.class = source;
             }
             break;
         default:
@@ -246,21 +242,21 @@ class ValueDescription {
             }
         }
 
-        this.hasValidator = true;
-        if (options.validator instanceof RegExp) {
-            this.isValid = value => {
-                return options.validator.test(value);
-            }
-        } else if (options.validator instanceof Function) {
-            this.isValid = value => {
-                try {
-                    return (options.validator(value) === true);
-                } catch (e) {
-                    return false;
+        this.hasValidator = (options.validator !== undefined);
+        if (this.hasValidator) {
+            if (options.validator instanceof Function) {
+                this.isValid = value => {
+                    try {
+                        return (options.validator(value) === true);
+                    } catch (e) {
+                        return false;
+                    }
+                };
+            } else {
+                this.isValid = value => {
+                    return options.validator.test(value);
                 }
-            };
-        } else {
-            this.hasValidator = false;
+            }
         }
 
         switch (this.type) {
