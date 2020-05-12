@@ -1,11 +1,11 @@
 const {determineType} = require('./helpers');
 
-function checkValue(value, description) {
-    const valueType = determineType(value);
-    if (valueType === description.type) {
+function checkValue(source, description) {
+    const sourceType = determineType(source);
+    if (sourceType === description.type) {
         const items = description.items;
-        if ((valueType === 'array') && items) {
-            const array = value;
+        if ((sourceType === 'array') && items) {
+            const array = source;
             let checkResult = false;
             if (items.type === 'mix') {
                 const choices = [...description.choices.values()];
@@ -45,9 +45,9 @@ function checkValue(value, description) {
             return checkResult;
         }
         const schema = description.schema;
-        if ((valueType === 'object') && schema) {
-            const object = value;
-            const objectKeys = new Set(Object.keys(object));
+        if ((sourceType === 'object') && schema) {
+            const object = source;
+            const objectKeys = new Set(Object.keys(object).filter(key => (object[key] !== undefined)));
             for (const schemaKey of schema.keys()) {
                 const keyDescription = schema.get(schemaKey);
                 const matchedKeys = new Set();
@@ -79,24 +79,24 @@ function checkValue(value, description) {
         }
         return true;
     } else {
-        if (valueType === 'undefined') {
+        if (sourceType === 'undefined') {
             return false;
         }
         if (description.type === 'any') {
             return true;
         }
-        if (valueType === 'null') {
+        if (sourceType === 'null') {
             return description.allowNull;
         }
-        if ((description.type === 'class') && (value instanceof description.class)) {
+        if ((description.type === 'class') && (source instanceof description.class)) {
             return true;
         }
-        if ((description.type === 'model') && description.model.check(value)) {
+        if ((description.type === 'model') && description.model.check(source)) {
             return true;
         }
         if (description.type === 'mix') {
             const choices = [...description.choices.values()];
-            const checkResult = choices.some(valueDescription => checkValue(value, valueDescription));
+            const checkResult = choices.some(valueDescription => checkValue(source, valueDescription));
             if ((description.strategy !== 'not') === checkResult) {
                 return true;
             }
@@ -105,31 +105,8 @@ function checkValue(value, description) {
     }
 }
 
-function buildCheck(description) {
-    const check = object => {
-        const checkResult = checkValue(object, description);
-        return checkResult;
-    };
-    return check;
-}
-
 function buildValue(source, description) {
-
+    return source;
 }
 
-function buildInstance(object, check) {
-    if (!check(object)) {
-        throw new Error('Invalid object.');
-    }
-    return object;
-}
-
-function buildCreate(check) {
-    const create = object => {
-        const instance = buildInstance(object, check);
-        return instance;
-    };
-    return create;
-}
-
-module.exports = {buildCheck, buildValue, buildCreate};
+module.exports = {checkValue, buildValue};

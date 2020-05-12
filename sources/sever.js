@@ -1,7 +1,7 @@
 const {determineType} = require('./helpers');
 const {instanceToObject, instanceToJSON} = require('./converter');
 const {createSchema, createMix, describeValue, buildDescription} = require('./description');
-const {buildCheck, buildCreate} = require('./instance');
+const {checkValue, buildValue} = require('./instance');
 
 const storage = require('./storage');
 
@@ -28,12 +28,17 @@ function model(name = '', schema = {}) {
     }
 
     const description = buildDescription(schema);
-    const check = buildCheck(description);
-    const create = buildCreate(check);
 
     class Model {
         constructor(object = {}) {
-            const instance = create(object);
+            const checkResult = Model.check(object);
+            if (!checkResult) {
+                throw new Error('Invalid object.');
+            }
+            const instance = buildValue(object, description);
+            if (instance === undefined) {
+                throw new Error('Invalid object.');
+            }
             Object.assign(this, instance);
         }
         static create(object = {}) {
@@ -43,7 +48,7 @@ function model(name = '', schema = {}) {
             if (object instanceof Model) {
                 return true;
             }
-            return check(object);
+            return checkValue(object, description);
         }
         static getName() {
             return name;
