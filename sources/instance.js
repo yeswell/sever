@@ -1,12 +1,6 @@
 const {determineType} = require('./helpers');
 
-function checkValue(value, description, options = {validationRequired: true}) {
-    const validationResult = () => {
-        if (options.validationRequired && description.hasValidator) {
-            return description.isValid(value);
-        }
-        return true;
-    };
+function checkValue(value, description) {
     const valueType = determineType(value);
     if (valueType === description.type) {
         const items = description.items;
@@ -18,14 +12,14 @@ function checkValue(value, description, options = {validationRequired: true}) {
                 switch (items.strategy) {
                     case 'any':
                         checkResult = array.every(item => {
-                            return choices.some(valueDescription => checkValue(item, valueDescription, options));
+                            return choices.some(valueDescription => checkValue(item, valueDescription));
                         });
                         break;
                     case 'all':
                         const valueDescriptions = new Set(choices);
                         checkResult = array.every(item => {
                             return choices.some(valueDescription => {
-                                const itemCheckResult = checkValue(item, valueDescription, options);
+                                const itemCheckResult = checkValue(item, valueDescription);
                                 if (itemCheckResult) {
                                     valueDescriptions.delete(valueDescription);
                                 }
@@ -36,21 +30,19 @@ function checkValue(value, description, options = {validationRequired: true}) {
                         break;
                     case 'one':
                         checkResult = choices.some(valueDescription => {
-                            return array.every(item => checkValue(item, valueDescription, options));
+                            return array.every(item => checkValue(item, valueDescription));
                         });
                         break;
                     case 'not':
                         checkResult = array.every(item => {
-                            return !choices.some(valueDescription => checkValue(item, valueDescription, options));
+                            return !choices.some(valueDescription => checkValue(item, valueDescription));
                         });
                         break;
                 }
             } else {
-                checkResult = array.every(item => checkValue(item, items, options));
+                checkResult = array.every(item => checkValue(item, items));
             }
-            if (!checkResult) {
-                return false;
-            }
+            return checkResult;
         }
         const schema = description.schema;
         if ((valueType === 'object') && schema) {
@@ -73,7 +65,7 @@ function checkValue(value, description, options = {validationRequired: true}) {
                 }
                 if (matchedKeys.size > 0) {
                     for (const matchedKey of matchedKeys) {
-                        if (!checkValue(object[matchedKey], keyDescription, options)) {
+                        if (!checkValue(object[matchedKey], keyDescription)) {
                             return false;
                         }
                         objectKeys.delete(matchedKey);
@@ -82,29 +74,31 @@ function checkValue(value, description, options = {validationRequired: true}) {
                     return false;
                 }
             }
-            if (objectKeys.size > 0) {
-                return false;
-            }
+            const checkResult = (objectKeys.size === 0);
+            return checkResult;
         }
-        return validationResult();
+        return true;
     } else {
+        if (valueType === 'undefined') {
+            return false;
+        }
         if (description.type === 'any') {
-            return validationResult();
+            return true;
         }
         if (valueType === 'null') {
             return description.allowNull;
         }
         if ((description.type === 'class') && (value instanceof description.class)) {
-            return validationResult();
+            return true;
         }
         if ((description.type === 'model') && description.model.check(value)) {
-            return validationResult();
+            return true;
         }
         if (description.type === 'mix') {
             const choices = [...description.choices.values()];
-            const checkResult = choices.some(valueDescription => checkValue(value, valueDescription, options));
+            const checkResult = choices.some(valueDescription => checkValue(value, valueDescription));
             if ((description.strategy !== 'not') === checkResult) {
-                return validationResult();
+                return true;
             }
         }
         return false;
@@ -113,7 +107,7 @@ function checkValue(value, description, options = {validationRequired: true}) {
 
 function buildCheck(description) {
     const check = object => {
-        const checkResult = checkValue(object, description, {validationRequired: false});
+        const checkResult = checkValue(object, description);
         return checkResult;
     };
     return check;
