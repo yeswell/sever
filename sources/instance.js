@@ -119,6 +119,10 @@ function buildCheck(description) {
     return check;
 }
 
+function buildValue(source, description) {
+
+}
+
 function buildInstance(object, check) {
     if (!check(object)) {
         throw new Error('Invalid object.');
@@ -134,12 +138,4 @@ function buildCreate(check) {
     return create;
 }
 
-function getKeyDescription(key, schema) {
-    for (const schemaKey of schema.keys()) {
-        if ((schemaKey === key) || ((schemaKey instanceof RegExp) && schemaKey.test(key))) {
-            return schema.get(schemaKey);
-        }
-    }
-}
-
-module.exports = {buildCheck, buildCreate};
+module.exports = {buildCheck, buildValue, buildCreate};
