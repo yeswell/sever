@@ -1,0 +1,76 @@
+############################################################
+#                                                          #
+#     https://www.mkdocs.org/user-guide/configuration/     #
+#                                                          #
+############################################################
+
+
+
+###########################
+#   Project information   #
+###########################
+
+site_name: Sever
+#site_url:
+repo_url: https://github.com/yeswell/sever
+repo_name: Sever on GitHub
+edit_uri: ''
+site_description: 'Typed objects as native js objects'
+site_author: 'Ivan Klimenko (yeswell.ru)'
+copyright: 'MIT License 2020, Ivan Klimenko'
+#google_analytics:
+remote_branch: gh-pages
+remote_name: origin
+
+
+
+############################
+#   Documentation layout   #
+############################
+
+#nav:
+
+
+
+#########################
+#   Build directories   #
+#########################
+
+theme: mkdocs
+docs_dir: docs
+#site_dir:
+#extra_css:
+#extra_javascript:
+#extra_templates:
+#extra:
+
+
+
+########################
+#   Preview controls   #
+########################
+
+use_directory_urls: true
+strict: true
+dev_addr: localhost:2310
+
+
+
+##########################
+#   Formatting options   #
+##########################
+
+#markdown_extensions:
+
+
+
+###############
+#   Plugins   #
+###############
+
+plugins:
+  - search:
+      separator: '[\s\-\.]+'
+      min_search_length: 3
+      lang: [en, ru]
+      prebuild_index: true

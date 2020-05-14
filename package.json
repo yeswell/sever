@@ -4,6 +4,8 @@
   "main": "main.js",
   "license": "MIT",
   "scripts": {
-    "test": "node tests/main.js"
+    "test": "node tests/main.js",
+    "docs": "mkdocs serve",
+    "push-docs": "mkdocs gh-deploy"
   }
 }
