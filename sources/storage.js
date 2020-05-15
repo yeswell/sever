@@ -42,8 +42,7 @@ const reserved = {
 const storage = {
     strategies: new Set(strategies),
     names: new Set(reserved.names),
-    types: new Set(reserved.types),
-    models: new Map()
+    types: new Set(reserved.types)
 };
 
 module.exports = storage;

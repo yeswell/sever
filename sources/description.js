@@ -2,8 +2,8 @@ const {determineType, FreezingMap, FreezingSet} = require('./helpers');
 
 const storage = require('./storage');
 
-function buildDescription(schema) {
-    const description = describeValue(schema);
+function buildDescription(schema, models) {
+    const description = describeValue(schema, {}, models);
 
     const topLevelTypes = new Set(['object', 'array']);
     if (!topLevelTypes.has(description.type)) {
@@ -71,8 +71,8 @@ function createMix(types) {
     return set;
 }
 
-function modelExist(source) {
-    for (const Model of storage.models.values()) {
+function modelExist(source, models) {
+    for (const Model of models.values()) {
         if (Model === source) {
             return true;
         }
@@ -80,7 +80,7 @@ function modelExist(source) {
     return false;
 }
 
-function describeValue(source, options) {
+function describeValue(source, options, models) {
     if (source instanceof ValueDescription) {
         return source;
     }
@@ -94,9 +94,9 @@ function describeValue(source, options) {
 
     switch (sourceType) {
         case 'string':
-            if (storage.models.has(source)) {
+            if (models.has(source)) {
                 type = 'model';
-                options.model = storage.models.get(source);
+                options.model = models.get(source);
             } else if (storage.types.has(source)) {
                 type = source;
             } else if (storage.names.has(source)) {
@@ -119,7 +119,7 @@ function describeValue(source, options) {
             }
             break;
         case 'function':
-            if (modelExist(source)) {
+            if (modelExist(source, models)) {
                 type = 'model';
                 options.model = source;
             } else {
@@ -145,7 +145,7 @@ function describeValue(source, options) {
     switch (type) {
         case 'array':
             if (options.items) {
-                options.items = describeValue(options.items);
+                options.items = describeValue(options.items, {}, models);
             } else {
                 options.items = null;
             }
@@ -172,7 +172,7 @@ function describeValue(source, options) {
                     } else if (!patternRegExpKey.test(String(key))) {
                         throw new Error(`RegExpKey "${key}" is invalid.`);
                     }
-                    schema.set(key, describeValue(value));
+                    schema.set(key, describeValue(value, {}, models));
                 }
                 schema.freeze();
                 options.schema = schema;
@@ -187,7 +187,7 @@ function describeValue(source, options) {
             }
             break;
         case 'model':
-            if (!modelExist(options.model)) {
+            if (!modelExist(options.model, models)) {
                 throw new Error('Property "model" in options must be some kind of Model.');
             }
             break;
@@ -198,7 +198,7 @@ function describeValue(source, options) {
                 }
                 const choices = new FreezingSet();
                 for (const value of options.choices.values()) {
-                    const valueDescription = describeValue(value);
+                    const valueDescription = describeValue(value, {}, models);
                     choices.add(valueDescription);
                 }
                 choices.freeze();

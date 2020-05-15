@@ -4,6 +4,7 @@ const {createSchema, createMix, describeValue, buildDescription} = require('./de
 const {checkValue, buildValue} = require('./instance');
 
 const storage = require('./storage');
+const models = new Map();
 
 function schema(...objects) {
     return createSchema(objects);
@@ -14,20 +15,20 @@ function mix(...types) {
 }
 
 function value(type = '', options = {}) {
-    return describeValue(type, options);
+    return describeValue(type, options,  models);
 }
 
 function model(name = '', schema = {}) {
     const nameType = determineType(name);
     if (nameType !== 'string') {
         throw new Error('Model name must be a string.');
-    } else if (storage.models.has(name)) {
+    } else if (models.has(name)) {
         throw new Error(`Model "${name}" is already exist.`);
     } else if (storage.types.has(name) || storage.names.has(name)) {
         throw new Error(`Model name "${name}" is invalid.`);
     }
 
-    const description = buildDescription(schema);
+    const description = buildDescription(schema, models);
 
     class Model {
         constructor(object = {}) {
@@ -35,7 +36,7 @@ function model(name = '', schema = {}) {
             if (!checkResult) {
                 throw new Error('Invalid object.');
             }
-            const instance = buildValue(object, description);
+            const instance = buildValue(object, description, models);
             if (instance === undefined) {
                 throw new Error('Invalid object.');
             }
@@ -74,13 +75,13 @@ function model(name = '', schema = {}) {
     Object.freeze(Model);
 
     model[name] = Model;
-    storage.models.set(name, Model);
+    models.set(name, Model);
 
     return Model;
 }
 
 function findModelOfInstance(instance) {
-    for (const Model of storage.models.values()) {
+    for (const Model of models.values()) {
         if (instance instanceof Model) {
             return Model;
         }
