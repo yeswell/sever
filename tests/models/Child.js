@@ -1,4 +1,4 @@
-const Sever = require('../../main');
+const Sever = require('../../sources/main');
 
 const name = 'Child';
 

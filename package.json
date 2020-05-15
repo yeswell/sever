@@ -1,7 +1,7 @@
 {
   "name": "sever",
   "version": "1.0.0",
-  "main": "main.js",
+  "main": "sources/main.js",
   "license": "MIT",
   "scripts": {
     "test": "node tests/main.js",

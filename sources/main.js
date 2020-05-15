@@ -1,4 +1,4 @@
-const Sever = require('./sources/sever');
+const Sever = require('./core');
 
 Object.freeze(Sever);
 
