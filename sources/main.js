@@ -13,8 +13,22 @@ function findModelOfInstance(instance, models) {
     }
 }
 
+const severNames = new Set();
+
 class Sever {
-    constructor() {
+    constructor(name = '') {
+        const nameType = determineType(name);
+        if (nameType !== 'string') {
+            throw new Error('Sever name must be a string.');
+        }
+        const size = severNames.size;
+        const severName = ((size > 0) ? ((name.length > 0) ? name : `Sever-${size}`) : '');
+        if (severNames.has(severName)) {
+            throw new Error(`Sever name "${severName}" is already exist.`);
+        }
+        const suffix = ((size > 0) ? ` [from ${severName}]` : '');
+        severNames.add(severName);
+
         const models = new Map();
 
         this.schema = (...objects) => createSchema(objects);
@@ -82,7 +96,8 @@ class Sever {
                 }
             }
 
-            Object.defineProperty(Model.prototype.constructor, 'name', {value: name});
+            const className = name + suffix;
+            Object.defineProperty(Model.prototype.constructor, 'name', {value: className});
             Object.freeze(Model);
 
             this.model[name] = Model;
