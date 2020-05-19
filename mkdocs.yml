@@ -15,9 +15,9 @@ site_name: Sever
 repo_url: https://github.com/yeswell/sever
 repo_name: Sever on GitHub
 edit_uri: ''
-site_description: 'Typed objects as native js objects'
-site_author: 'Ivan Klimenko (yeswell.ru)'
-copyright: 'MIT License 2020, Ivan Klimenko'
+site_description: Typed objects as native js objects
+site_author: Ivan Klimenko
+copyright: MIT License 2020, Ivan Klimenko
 #google_analytics:
 remote_branch: gh-pages
 remote_name: origin
