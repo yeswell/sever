@@ -40,6 +40,7 @@ const reserved = {
 };
 
 const storage = {
+    severNames: new Set(),
     strategies: new Set(strategies),
     names: new Set(reserved.names),
     types: new Set(reserved.types)

@@ -13,21 +13,19 @@ function findModelOfInstance(instance, models) {
     }
 }
 
-const severNames = new Set();
-
 class Sever {
     constructor(name = '') {
         const nameType = determineType(name);
         if (nameType !== 'string') {
             throw new Error('Sever name must be a string.');
         }
-        const size = severNames.size;
+        const size = storage.severNames.size;
         const severName = ((size > 0) ? ((name.length > 0) ? name : `Sever-${size}`) : '');
-        if (severNames.has(severName)) {
+        if (storage.severNames.has(severName)) {
             throw new Error(`Sever name "${severName}" is already exist.`);
         }
         const suffix = ((size > 0) ? ` [from ${severName}]` : '');
-        severNames.add(severName);
+        storage.severNames.add(severName);
 
         const models = new Map();
 
