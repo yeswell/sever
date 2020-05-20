@@ -57,7 +57,8 @@ class Sever {
                     if (instance === undefined) {
                         throw new Error('Invalid object.');
                     }
-                    Object.assign(this, instance);
+                    Reflect.setPrototypeOf(instance, Model.prototype);
+                    return instance;
                 }
 
                 static create(object = {}) {
@@ -137,8 +138,8 @@ class Sever {
 }
 
 const globalSever = new Sever();
-
 Object.assign(Sever, globalSever);
+
 Object.freeze(Sever);
 
 module.exports = Sever;

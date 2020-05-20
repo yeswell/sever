@@ -83,10 +83,12 @@ const handlerObjectProxy = {
     // setPrototypeOf() {}
 };
 
-class ObjectProxy extends Proxy {
+class ObjectProxy {
     constructor(object, description, parent) {
         const storage = buildStorage(object, description, parent);
-        super(storage, handlerObjectProxy);
+        const proxy = new Proxy(storage, handlerObjectProxy);
+        Reflect.setPrototypeOf(proxy, ObjectProxy.prototype);
+        return proxy;
     }
 }
 
@@ -114,10 +116,12 @@ const handlerArrayProxy = {
     // setPrototypeOf() {}
 };
 
-class ArrayProxy extends Proxy {
+class ArrayProxy {
     constructor(array, description, parent) {
         const storage = buildStorage(array, description, parent);
-        super(storage, handlerArrayProxy);
+        const proxy = new Proxy(storage, handlerArrayProxy);
+        Reflect.setPrototypeOf(proxy, ArrayProxy.prototype);
+        return proxy;
     }
 }
 
