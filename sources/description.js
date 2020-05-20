@@ -88,9 +88,10 @@ function describeValue(source, options, models) {
     source = transformClass(source);
     const sourceType = determineType(source);
 
-    let type = '';
     const optionsType = determineType(options);
     options = (optionsType === 'object') ? {...options} : {};
+
+    let type = '';
 
     switch (sourceType) {
         case 'string':
