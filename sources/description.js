@@ -223,7 +223,11 @@ function describeValue(source, sourceOptions, models) {
             break;
     }
 
-    return new ValueDescription(type, options);
+    const description = new ValueDescription(type, options);
+
+    Object.freeze(description);
+
+    return description;
 }
 
 class ValueDescription {
@@ -282,8 +286,6 @@ class ValueDescription {
                 this.choices = options.choices;
                 break;
         }
-
-        Object.freeze(this);
     }
 }
 
