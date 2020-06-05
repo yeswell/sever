@@ -193,6 +193,13 @@ function describeValue(source, options, models) {
             }
             break;
         case 'mix':
+            if (options.strategy) {
+                if (!storage.strategies.has(options.strategy)) {
+                    throw new Error(`Invalid strategy "${options.strategy}".`);
+                }
+            } else {
+                options.strategy = 'any';
+            }
             if (options.choices instanceof Set) {
                 if (options.choices.size === 0) {
                     throw new Error('Required at least one type in mix.');
@@ -206,13 +213,6 @@ function describeValue(source, options, models) {
                 options.choices = choices;
             } else {
                 throw new Error('Property "choices" in options must be instance of Set.');
-            }
-            if (options.strategy) {
-                if (!storage.strategies.has(options.strategy)) {
-                    throw new Error(`Invalid strategy "${options.strategy}".`);
-                }
-            } else {
-                options.strategy = 'any';
             }
             break;
     }
@@ -272,8 +272,8 @@ class ValueDescription {
                 this.model = options.model;
                 break;
             case 'mix':
-                this.choices = options.choices;
                 this.strategy = options.strategy;
+                this.choices = options.choices;
                 break;
         }
 
