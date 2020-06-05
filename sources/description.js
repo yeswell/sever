@@ -80,11 +80,7 @@ function modelExist(source, models) {
     return false;
 }
 
-function describeValue(source, sourceOptions, models) {
-    if (source instanceof ValueDescription) {
-        return source;
-    }
-
+function transformSource(source, sourceOptions, models) {
     source = transformClass(source);
     const sourceType = determineType(source);
 
@@ -131,6 +127,16 @@ function describeValue(source, sourceOptions, models) {
         default:
             throw new Error('Invalid schema.');
     }
+
+    return [type, options];
+}
+
+function describeValue(source, sourceOptions, models) {
+    if (source instanceof ValueDescription) {
+        return source;
+    }
+
+    const [type, options] = transformSource(source, sourceOptions, models);
 
     if (options.validator) {
         if (options.validator instanceof RegExp) {
