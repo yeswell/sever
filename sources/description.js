@@ -80,7 +80,7 @@ function modelExist(source, models) {
     return false;
 }
 
-function describeValue(source, options, models) {
+function describeValue(source, sourceOptions, models) {
     if (source instanceof ValueDescription) {
         return source;
     }
@@ -88,8 +88,8 @@ function describeValue(source, options, models) {
     source = transformClass(source);
     const sourceType = determineType(source);
 
-    const optionsType = determineType(options);
-    options = (optionsType === 'object') ? {...options} : {};
+    const optionsType = determineType(sourceOptions);
+    const options = (optionsType === 'object') ? {...sourceOptions} : {};
 
     let type = '';
 
