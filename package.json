@@ -1,11 +1,17 @@
 {
   "name": "sever",
   "version": "1.0.0",
-  "main": "sources/main.js",
+  "main": "builds/cjs.sever.js",
+  "browser": "builds/es6.min.sever.js",
   "license": "MIT",
   "scripts": {
     "test": "node tests/main.js",
     "docs": "mkdocs serve",
-    "push-docs": "mkdocs gh-deploy"
+    "push-docs": "mkdocs gh-deploy",
+    "build": "rollup -c"
+  },
+  "devDependencies": {
+    "rollup": "^2.13.1",
+    "rollup-plugin-terser": "^6.1.0"
   }
 }
