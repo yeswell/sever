@@ -1,4 +1,6 @@
-const Sever = require('../../builds/cjs.sever');
+const {version} = require('../../package');
+
+const Sever = require(`../../builds/${version}/cjs.sever`);
 
 const name = 'User';
 

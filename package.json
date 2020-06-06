@@ -1,8 +1,8 @@
 {
   "name": "sever",
   "version": "1.0.0",
-  "main": "builds/cjs.sever.js",
-  "browser": "builds/es6.min.sever.js",
+  "main": "builds/1.0.0/cjs.sever.js",
+  "browser": "builds/1.0.0/es6.min.sever.js",
   "license": "MIT",
   "scripts": {
     "test": "node tests/main.js",

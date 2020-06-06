@@ -17,19 +17,6 @@ const config = {
         {
             format: 'cjs',
             file: `builds/${version}/cjs.sever.js`
-        },
-        {
-            format: 'es',
-            file: 'builds/es6.min.sever.js',
-            plugins: [terser()]
-        },
-        {
-            format: 'es',
-            file: 'builds/es6.sever.js'
-        },
-        {
-            format: 'cjs',
-            file: 'builds/cjs.sever.js'
         }
     ]
 };
