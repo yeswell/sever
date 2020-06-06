@@ -1,6 +1,6 @@
-const {determineType, FreezingMap, FreezingSet} = require('./helpers');
+import {determineType, FreezingMap, FreezingSet} from './helpers.js';
 
-const storage = require('./storage');
+import storage from './storage.js';
 
 function buildDescription(schema, models) {
     const description = describeValue(schema, {}, models);
@@ -289,4 +289,4 @@ class ValueDescription {
     }
 }
 
-module.exports = {buildDescription, createSchema, createMix, describeValue};
+export {buildDescription, createSchema, createMix, describeValue};

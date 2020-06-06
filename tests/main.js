@@ -1,4 +1,4 @@
-const Sever = require('../sources/main');
+const Sever = require('../builds/cjs.sever');
 
 const User = require('./models/User');
 const Child = require('./models/Child');

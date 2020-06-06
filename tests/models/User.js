@@ -1,4 +1,4 @@
-const Sever = require('../../sources/main');
+const Sever = require('../../builds/cjs.sever');
 
 const name = 'User';
 

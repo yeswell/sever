@@ -46,4 +46,4 @@ const storage = {
     types: new Set(reserved.types)
 };
 
-module.exports = storage;
+export {storage as default};

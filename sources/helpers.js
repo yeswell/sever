@@ -46,4 +46,4 @@ class FreezingSet extends Set {
     }
 }
 
-module.exports = {determineType, FreezingMap, FreezingSet};
+export {determineType, FreezingMap, FreezingSet};

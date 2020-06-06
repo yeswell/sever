@@ -34,6 +34,4 @@ const config = {
     ]
 };
 
-export {
-    config as default
-};
+export {config as default};

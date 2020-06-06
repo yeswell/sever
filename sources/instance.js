@@ -1,4 +1,4 @@
-const {determineType} = require('./helpers');
+import {determineType} from './helpers.js';
 
 function checkValue(source, description) {
     const sourceType = determineType(source);
@@ -109,4 +109,4 @@ function buildValue(source, description) {
     return source;
 }
 
-module.exports = {checkValue, buildValue};
+export {checkValue, buildValue};

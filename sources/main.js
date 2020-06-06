@@ -1,9 +1,9 @@
-const {determineType} = require('./helpers');
-const {instanceToObject, instanceToJSON} = require('./converter');
-const {createSchema, createMix, describeValue, buildDescription} = require('./description');
-const {checkValue, buildValue} = require('./instance');
+import {determineType} from './helpers.js';
+import {instanceToObject, instanceToJSON} from './converter.js';
+import {createSchema, createMix, describeValue, buildDescription} from './description.js';
+import {checkValue, buildValue} from './instance.js';
 
-const storage = require('./storage');
+import storage from './storage.js';
 
 function findModelOfInstance(instance, models) {
     for (const Model of models.values()) {
@@ -142,4 +142,6 @@ Object.assign(Sever, globalSever);
 
 Object.freeze(Sever);
 
-module.exports = Sever;
+export {
+    Sever as default
+};

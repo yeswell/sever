@@ -6,4 +6,4 @@ function instanceToJSON(instance, description, options) {
 
 }
 
-module.exports = {instanceToObject, instanceToJSON};
+export {instanceToObject, instanceToJSON};

@@ -1,4 +1,4 @@
-const {buildValue} = require('./instance');
+import {buildValue} from './instance.js';
 
 function getKeyDescription(key, schema) {
     for (const schemaKey of schema.keys()) {
@@ -125,4 +125,4 @@ class ArrayProxy {
     }
 }
 
-module.exports = {ObjectProxy, ArrayProxy};
+export {ObjectProxy, ArrayProxy};
