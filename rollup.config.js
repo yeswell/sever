@@ -5,11 +5,11 @@ import {version} from './package.json';
 const config = {
     input: 'sources/main.js',
     output: [
-        {
-            format: 'es',
-            file: `builds/${version}/es6.min.sever.js`,
-            plugins: [terser()]
-        },
+        // {
+        //     format: 'es',
+        //     file: `builds/${version}/es6.min.sever.js`,
+        //     plugins: [terser()]
+        // },
         {
             format: 'es',
             file: `builds/${version}/es6.sever.js`
