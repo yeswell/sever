@@ -15,8 +15,7 @@ function findModelOfInstance(instance, models) {
 
 class Sever {
 
-    #name = '';
-    #suffix = '';
+    #postfix = '';
     #models = new Map();
 
     constructor(name = '') {
@@ -26,13 +25,13 @@ class Sever {
         }
         const size = storage.severNames.size;
         if (size > 0) {
-            this.#name = ((name.length > 0) ? name : `Sever-${size}`);
-            this.#suffix = ` [from ${this.#name}]`;
+            name = ((name.length > 0) ? name : `Sever-${size}`);
+            this.#postfix = ` [from ${name}]`;
         }
-        if (storage.severNames.has(this.#name)) {
-            throw new Error(`Sever name "${this.#name}" is already exist.`);
+        if (storage.severNames.has(name)) {
+            throw new Error(`Sever name "${name}" is already exist.`);
         }
-        storage.severNames.add(this.#name);
+        storage.severNames.add(name);
 
         Object.freeze(this);
     }
@@ -54,7 +53,6 @@ class Sever {
         }
 
         const models = this.#models;
-
         const description = buildDescription(schema, models);
 
         class Model {
@@ -105,7 +103,7 @@ class Sever {
             }
         }
 
-        const tag = name + this.#suffix;
+        const tag = name + this.#postfix;
         Object.defineProperty(Model.prototype.constructor, 'name', {value: tag});
         Object.freeze(Model);
 
