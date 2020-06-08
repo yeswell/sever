@@ -1,6 +1,4 @@
-const {version} = require('../package');
-
-const Sever = require(`../builds/${version}/cjs.sever`);
+const Sever = require(`../builds/cjs.sever`);
 
 const User = require('./models/User');
 const Child = require('./models/Child');
