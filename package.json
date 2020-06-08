@@ -1,10 +1,16 @@
 {
   "name": "sever",
   "version": "1.0.0",
+  "license": "MIT",
+  "files": [
+    "builds",
+    "docs",
+    "mkdocs.yml",
+    "yarn.lock"
+  ],
   "main": "builds/cjs.sever.js",
   "browser": "builds/es6.min.sever.js",
   "types": "builds/sever.d.ts",
-  "license": "MIT",
   "scripts": {
     "test": "node tests/main.js",
     "docs": "mkdocs serve",
