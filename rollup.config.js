@@ -1,4 +1,5 @@
-import {terser} from 'rollup-plugin-terser';
+// import {terser} from 'rollup-plugin-terser';
+import copy from 'rollup-plugin-copy';
 
 const config = {
     input: 'sources/main.js',
@@ -16,6 +17,9 @@ const config = {
             format: 'cjs',
             file: 'builds/cjs.sever.js'
         }
+    ],
+    plugins: [
+        copy({targets: [{src: 'sources/types.d.ts', dest: 'builds', rename: 'sever.d.ts'}]})
     ]
 };
 
